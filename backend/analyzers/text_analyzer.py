@@ -19,7 +19,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import newspaper
 from goose3 import Goose
-from readability import Readability
 from .models import make_text_result
 from .azure_ai import azure_ai
 

@@ -68,10 +68,9 @@ const getApiBaseUrl = (): string => {
     }
   }
   else {
-    // For internet deployment without specific port (production-like)
-    console.log('Internet deployment detected');
-    // Try same domain with port 8000 first
-    backendUrl = `${protocol}//${hostname}:8000`;
+    // For internet deployment/production (served from same domain)
+    console.log('Production deployment detected');
+    backendUrl = currentOrigin;
   }
   
   console.log('Constructed backend URL:', backendUrl);
@@ -107,6 +106,7 @@ export const findWorkingApiUrl = async (): Promise<string> => {
   // List of possible backend URLs to try
   const possibleUrls = [
     API_BASE_URL, // Primary detected URL
+    window.location.origin, // Try same origin (production/proxy)
     `${protocol}//${hostname}:8000`, // Same host with port 8000
     `http://${hostname}:8000`, // HTTP version
     `https://${hostname}:8000`, // HTTPS version
