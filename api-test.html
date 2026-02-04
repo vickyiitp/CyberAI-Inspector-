@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberAI Inspector - API Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #4ade80; color: #000; }
+        .error { background-color: #ef4444; color: #fff; }
+        .warning { background-color: #f59e0b; color: #000; }
+        .info { background-color: #06b6d4; color: #000; }
+        button {
+            background-color: #06b6d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0891b2;
+        }
+        .logs {
+            background-color: #000;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 CyberAI Inspector - API Connection Test</h1>
+        <p>This tool helps diagnose connection issues between the frontend and backend.</p>
+        
+        <div id="currentInfo" class="status info">
+            <strong>Current Location:</strong> <span id="location"></span><br>
+            <strong>Protocol:</strong> <span id="protocol"></span><br>
+            <strong>Hostname:</strong> <span id="hostname"></span><br>
+            <strong>Port:</strong> <span id="port"></span>
+        </div>
+
+        <div>
+            <button onclick="detectApiUrl()">🔍 Detect Backend URL</button>
+            <button onclick="testConnection()">🌐 Test Connection</button>
+            <button onclick="testAllEndpoints()">🔧 Test All Endpoints</button>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        </div>
+
+        <div id="detectedUrl" class="status warning" style="display: none;">
+            <strong>Detected Backend URL:</strong> <span id="backendUrl"></span>
+        </div>
+
+        <div id="connectionStatus" class="status" style="display: none;">
+            <strong>Connection Status:</strong> <span id="statusText"></span>
+        </div>
+
+        <h3>📋 Logs</h3>
+        <div id="logs" class="logs"></div>
+
+        <h3>💡 Troubleshooting Tips</h3>
+        <ul>
+            <li><strong>Black Screen on Analyze:</strong> Usually indicates backend connection failure</li>
+            <li><strong>CORS Errors:</strong> Backend might not be configured to allow your domain</li>
+            <li><strong>Timeout Errors:</strong> Backend server might not be running or accessible</li>
+            <li><strong>Port Issues:</strong> Ensure both ports 3000 (frontend) and 8000 (backend) are forwarded</li>
+        </ul>
+
+        <h3>📝 Manual Configuration</h3>
+        <p>If automatic detection fails, create <code>frontend/.env</code> with:</p>
+        <code>VITE_API_BASE_URL=https://your-backend-url.com</code>
+    </div>
+
+    <script>
+        function log(message) {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.textContent += `[${timestamp}] ${message}\n`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            statusDiv.className = `status ${type}`;
+            statusText.textContent = message;
+            statusDiv.style.display = 'block';
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        function getApiBaseUrl() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            
+            log(`Detecting API URL for: ${protocol}//${hostname}:${port}`);
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                log('Local development detected');
+                return 'http://localhost:8000';
+            }
+            
+            let backendUrl;
+            
+            if (hostname.includes('githubpreview.dev') || hostname.includes('app.github.dev')) {
+                log('GitHub Codespaces detected');
+                backendUrl = window.location.origin.replace('3000', '8000');
+            } else if (hostname.includes('ngrok')) {
+                log('ngrok detected');
+                if (port) {
+                    backendUrl = `${protocol}//${hostname}:8000`;
+                } else {
+                    const backendHostname = hostname.replace('-3000', '-8000');
+                    backendUrl = `${protocol}//${backendHostname}`;
+                }
+            } else {
+                log('Generic deployment detected');
+                backendUrl = `${protocol}//${hostname}:8000`;
+            }
+            
+            log(`Constructed backend URL: ${backendUrl}`);
+            return backendUrl;
+        }
+
+        function detectApiUrl() {
+            const url = getApiBaseUrl();
+            document.getElementById('backendUrl').textContent = url;
+            document.getElementById('detectedUrl').style.display = 'block';
+            log(`Detected backend URL: ${url}`);
+        }
+
+        async function testConnection() {
+            const backendUrl = getApiBaseUrl();
+            
+            try {
+                log('Testing connection to /health endpoint...');
+                const response = await fetch(`${backendUrl}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    signal: AbortSignal.timeout(10000)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Connection successful: ${JSON.stringify(data)}`);
+                    updateStatus('Connected Successfully', 'success');
+                } else {
+                    log(`❌ HTTP Error: ${response.status} ${response.statusText}`);
+                    updateStatus(`HTTP Error: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Connection failed: ${error.message}`);
+                updateStatus(`Connection Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllEndpoints() {
+            const backendUrl = getApiBaseUrl();
+            const endpoints = [
+                { path: '/', name: 'Root' },
+                { path: '/health', name: 'Health Check' },
+                { path: '/analyze-url/', name: 'URL Analyzer', method: 'POST', body: { url: 'https://example.com' } },
+                { path: '/analyze-text/', name: 'Text Analyzer', method: 'POST', body: { text: 'Test text' } }
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    log(`Testing ${endpoint.name} (${endpoint.path})...`);
+                    
+                    const options = {
+                        method: endpoint.method || 'GET',
+                        mode: 'cors',
+                        signal: AbortSignal.timeout(10000)
+                    };
+
+                    if (endpoint.body) {
+                        options.headers = { 'Content-Type': 'application/json' };
+                        options.body = JSON.stringify(endpoint.body);
+                    }
+
+                    const response = await fetch(`${backendUrl}${endpoint.path}`, options);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`✅ ${endpoint.name}: SUCCESS`);
+                    } else {
+                        log(`❌ ${endpoint.name}: HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    log(`❌ ${endpoint.name}: ${error.message}`);
+                }
+            }
+        }
+
+        // Initialize page
+        document.getElementById('location').textContent = window.location.href;
+        document.getElementById('protocol').textContent = window.location.protocol;
+        document.getElementById('hostname').textContent = window.location.hostname;
+        document.getElementById('port').textContent = window.location.port || 'default';
+
+        log('API Connection Test Tool Loaded');
+        log('Click "Detect Backend URL" to start diagnosis');
+    </script>
+</body>
+</html>

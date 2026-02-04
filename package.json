@@ -1,0 +1,39 @@
+{
+  "name": "cyberai-inspector",
+  "version": "1.0.0",
+  "description": "A comprehensive AI-powered analysis suite for detecting manipulation, verifying authenticity, and assessing trustworthiness of digital content",
+  "scripts": {
+    "install:backend": "cd backend && pip install -r requirements.txt",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "start:backend": "cd backend && python main.py",
+    "start:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "test:backend": "cd backend && python -m pytest",
+    "test:frontend": "cd frontend && npm test",
+    "start:windows:backend": "scripts\\start-backend.bat",
+    "start:windows:frontend": "scripts\\start-frontend.bat"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/cyberai-inspector.git"
+  },
+  "keywords": [
+    "ai",
+    "cybersecurity",
+    "image-analysis",
+    "url-analysis",
+    "text-analysis",
+    "deepfake-detection",
+    "misinformation",
+    "trust-score"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "workspaces": [
+    "frontend"
+  ],
+  "devDependencies": {
+    "baseline-browser-mapping": "^2.9.15"
+  }
+}

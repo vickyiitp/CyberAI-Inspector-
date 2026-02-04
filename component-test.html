@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberAI Inspector - Component Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a202c;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        button {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2c5282;
+        }
+        button:disabled {
+            background: #4a5568;
+            cursor: not-allowed;
+        }
+        input {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 300px;
+            margin: 5px;
+        }
+        .result {
+            background: #1a365d;
+            border: 1px solid #2c5282;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #742a2a;
+            border: 1px solid #c53030;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .log {
+            background: #1a202c;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 CyberAI Inspector - Component Test</h1>
+        <p>This page tests the backend connection without React to isolate the black screen issue.</p>
+
+        <div class="test-section">
+            <h2>🔗 Backend Connection Test</h2>
+            <button onclick="testConnection()">Test Backend Connection</button>
+            <button onclick="clearLog()">Clear Log</button>
+            <div id="connection-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🌐 URL Analysis Test</h2>
+            <input type="text" id="url-input" placeholder="https://example.com" value="https://google.com">
+            <button onclick="testUrlAnalysis()">Analyze URL</button>
+            <div id="url-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Console Log</h2>
+            <div id="console-log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Override console.log to show in our log div
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logDiv = document.getElementById('console-log');
+
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : '📝';
+            logDiv.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+
+        // Get API base URL (copied from api_simple.ts)
+        function getApiBaseUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            console.log('Current location:', window.location.href);
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                console.log('Local development detected');
+                return 'http://localhost:8000';
+            }
+            
+            console.log('Forwarded port detected, using same host with port 8000');
+            return `${protocol}//${hostname}:8000`;
+        }
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                const apiUrl = getApiBaseUrl();
+                console.log('Testing backend connection to:', apiUrl);
+                
+                const response = await fetch(`${apiUrl}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Backend response:', data);
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3>✅ Connection Successful</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Response:</strong> ${JSON.stringify(data, null, 2)}</p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Connection test failed:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Connection Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testUrlAnalysis() {
+            const urlInput = document.getElementById('url-input');
+            const resultDiv = document.getElementById('url-result');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                resultDiv.innerHTML = '<div class="error">Please enter a URL</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Analyzing URL...</p>';
+            
+            try {
+                const apiUrl = getApiBaseUrl();
+                console.log('Analyzing URL:', url);
+                console.log('Using API base URL:', apiUrl);
+                
+                const response = await fetch(`${apiUrl}/analyze-url/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url }),
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('Analysis result:', result);
+                
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3>✅ Analysis Complete</h3>
+                        <p><strong>URL:</strong> ${url}</p>
+                        <p><strong>Trust Score:</strong> ${result.trustScore}/100</p>
+                        <p><strong>Verdict:</strong> ${result.verdict}</p>
+                        <details>
+                            <summary>Full Result (click to expand)</summary>
+                            <pre style="margin-top: 10px; font-size: 11px;">${JSON.stringify(result, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('URL analysis failed:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Analysis Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('console-log').textContent = '';
+        }
+
+        // Test connection on page load
+        console.log('Page loaded, testing initial connection...');
+        testConnection();
+    </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Backend Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a1a; 
+            color: white; 
+            padding: 20px; 
+        }
+        button { 
+            background: #06b6d4; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+        .result { 
+            background: #2a2a2a; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            white-space: pre-wrap; 
+        }
+        .success { background: #22c55e; color: black; }
+        .error { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Backend Connection Test</h1>
+    <p>Current URL: <span id="currentUrl"></span></p>
+    <p>Detected Backend: <span id="backendUrl"></span></p>
+    
+    <button onclick="testHealth()">Test /health</button>
+    <button onclick="testUrlAnalyze()">Test URL Analyze</button>
+    <button onclick="testTextAnalyze()">Test Text Analyze</button>
+    <button onclick="clearResults()">Clear</button>
+    
+    <div id="results"></div>
+
+    <script>
+        // Display current location
+        document.getElementById('currentUrl').textContent = window.location.href;
+        
+        // Simple backend URL detection
+        function getBackendUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost:8000';
+            }
+            return `${protocol}//${hostname}:8000`;
+        }
+        
+        const backendUrl = getBackendUrl();
+        document.getElementById('backendUrl').textContent = backendUrl;
+        
+        function addResult(message, isSuccess = true) {
+            const div = document.createElement('div');
+            div.className = `result ${isSuccess ? 'success' : 'error'}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testHealth() {
+            try {
+                addResult('Testing /health endpoint...');
+                const response = await fetch(`${backendUrl}/health`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Health check successful: ${JSON.stringify(data)}`);
+                } else {
+                    addResult(`❌ Health check failed: ${response.status} ${response.statusText}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ Health check error: ${error.message}`, false);
+            }
+        }
+        
+        async function testUrlAnalyze() {
+            try {
+                addResult('Testing URL analysis...');
+                const response = await fetch(`${backendUrl}/analyze-url/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://example.com' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ URL analysis successful: ${JSON.stringify(data)}`);
+                } else {
+                    addResult(`❌ URL analysis failed: ${response.status} ${response.statusText}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ URL analysis error: ${error.message}`, false);
+            }
+        }
+        
+        async function testTextAnalyze() {
+            try {
+                addResult('Testing text analysis...');
+                const response = await fetch(`${backendUrl}/analyze-text/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: 'This is a test text for analysis.' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Text analysis successful: ${JSON.stringify(data)}`);
+                } else {
+                    addResult(`❌ Text analysis failed: ${response.status} ${response.statusText}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ Text analysis error: ${error.message}`, false);
+            }
+        }
+        
+        // Auto-test on load
+        setTimeout(testHealth, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pillow
+python-whois
+aiohttp
+nltk
+textblob
+beautifulsoup4
+requests
+opencv-python
+
+# NLP & Text Analysis
+spacy
+yake
+langdetect
+vaderSentiment
+textstat
+transformers
+sentence-transformers
+scikit-learn
+newspaper3k
+goose3
+readability-lxml
+torch
+dnspython
+
+# Azure AI Services
+azure-cognitiveservices-vision-computervision
+azure-ai-contentsafety
+azure-ai-textanalytics
+azure-core
+azure-identity
+msrest
