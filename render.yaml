@@ -3,7 +3,7 @@ services:
   - type: web
     name: cyberai-inspector-frontend
     env: static
-    buildCommand: cd frontend && rm -rf node_modules package-lock.json && npm install && npm run build
+    buildCommand: cd frontend && npm cache clean --force && rm -rf node_modules package-lock.json .npmrc && echo "include=optional" > .npmrc && echo "optional=true" >> .npmrc && npm install --include=optional --force && npm run build
     staticPublishPath: frontend/dist
     routes:
       - type: rewrite
@@ -11,7 +11,7 @@ services:
         destination: /index.html
     envVars:
       - key: NODE_VERSION
-        value: 18
+        value: 20.11.0
 
   # Backend API
   - type: web
